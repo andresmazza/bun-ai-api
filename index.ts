@@ -1,8 +1,44 @@
+import { cerebrasService } from "./services/cerebras";
+import { groqServices } from "./services/groq";
+import type { AIService,ChatMessage } from "./types";
+
+const services: AIService[] = [
+  groqServices,
+  cerebrasService
+];
+
+let currentServiceIndex = 0;
+
+function getNextService() {
+  const service = services[currentServiceIndex];
+  currentServiceIndex = (currentServiceIndex + 1) % services.length;
+  return service;
+}
+
 const server = Bun.serve({
   port: process.env.PORT ?? 3000,
   async fetch(req) {
+    const { pathname } = new URL(req.url);
+
+    if (pathname === "/chat" && req.method === "POST") {
+      const { messages } = await req.json() as { messages: ChatMessage[] };
+
+      const service = getNextService();
+      
+      console.log(`Using service: ${service?.name}`);
+
+      const stream = await service?.chat(messages);
+      
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    }
     console.log(`Received request: ${req.method} ${req.url}`);
-    return new Response("Hello, Bun!!!");
+    return new Response("Not Found", { status: 404 });
   },
 });
 
