@@ -8,23 +8,5 @@ cmds = [ "bun install" ]
 cmds = []
 
 [start]
-cmds = "bun run start"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+cmd = "bun run start"
 
